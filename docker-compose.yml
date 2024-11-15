@@ -3,7 +3,7 @@ services:
   postgres:
     image: library/postgres:13
     container_name: postgres
-    restart: on-failure
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "postgres"
@@ -14,7 +14,53 @@ services:
     ports:
       - "5432:5432"
 
-# TODO добавить сервисы
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 15s
+      timeout: 15s
+      retries: 2
+
+  ticket-service:
+    container_name: "ticketservice"
+    depends_on:
+      - postgres
+    build:
+      dockerfile: ./src/TicketServices/Dockerfile
+    ports:
+      - "8050:8080"
+        
+  privilege-service:
+    container_name: "privilegeservice"
+    depends_on:
+      - "postgres"
+    build:
+      context: .
+      dockerfile: ./src/BonusServices/Dockerfile
+    restart: always
+    ports:
+      - "8060:8080"
+
+  flight-service:
+    container_name: "flightservice"
+    depends_on:
+      - "postgres"
+    build:
+      context: .
+      dockerfile: ./src/FlightServices/Dockerfile
+    restart: always
+    ports:
+      - "8070:8080"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./src/Gateway/Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
 
 volumes:
   db-data:
