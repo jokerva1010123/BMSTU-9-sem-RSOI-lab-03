@@ -2,10 +2,10 @@ name: GitHub Classroom Workflow
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   build:
     name: Autograding
@@ -27,6 +27,7 @@ jobs:
         timeout-minutes: 5
         run: |
           docker compose up -d
+          chmod + scripts/wait-script.sh
           ./scripts/wait-script.sh
         env:
           WAIT_PORTS: 8080,8070,8060,8050
@@ -35,25 +36,17 @@ jobs:
 
       - name: Run API Tests
         timeout-minutes: 5
-        run: ./scripts/test-script.sh
+        run: |
+          chmod + scripts/test-script.sh
+          ./scripts/test-script.sh
         env:
-          VARIANT: <variant>
-          SERVICE_NAME: <your service name>
-          PORT_NUMBER: <port number>
+          VARIANT: v1
+          SERVICE_NAME: privilege-service
+          PORT_NUMBER: 8060
 
       - uses: education/autograding@v1
         id: autograder
         continue-on-error: true
-
-      - name: Github auto grader mark
-        uses: Romanow/google-sheet-autograder-marker@v1.0
-        with:
-          google_token: ${{secrets.GOOGLE_API_KEY}}
-          sheet_id: "1xkgjUX6Qmk7rdJG-QPOToav-HWWtthJjnShIKnw3oIY"
-          homework_number: 3
-          user_column: 'D'
-          column_offset: 'F'
-          mark: "'+"
 
       - name: Stop containers
         if: always()
